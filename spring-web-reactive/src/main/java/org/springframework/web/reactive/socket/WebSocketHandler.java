@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,10 @@
  */
 package org.springframework.web.reactive.socket;
 
-import java.util.Collections;
-import java.util.List;
-
 import reactor.core.publisher.Mono;
 
 /**
- * Handler for a WebSocket-style session interaction.
+ * Handler for a WebSocket session.
  *
  * @author Rossen Stoyanchev
  * @since 5.0
@@ -30,16 +27,17 @@ public interface WebSocketHandler {
 
 	/**
 	 * Return the list of sub-protocols supported by this handler.
-	 * <p>By default an empty list is returned.
+	 * <p>By default an empty array is returned.
 	 */
-	default List<String> getSubProtocols() {
-		return Collections.emptyList();
+	default String[] getSubProtocols() {
+		return new String[0];
 	}
 
 	/**
-	 * Handle the given WebSocket session.
-	 * @param session the session
-	 * @return signals completion for session handling
+	 * Handle the WebSocket session.
+	 * @param session the session to handle
+	 * @return completion {@code Mono<Void>} to indicate the outcome of the
+	 * WebSocket session handling.
 	 */
 	Mono<Void> handle(WebSocketSession session);
 

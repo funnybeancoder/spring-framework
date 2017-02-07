@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -413,10 +413,12 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 									!requiresEagerInitForType(mbd.getFactoryBeanName()))) {
 						// In case of FactoryBean, match object created by FactoryBean.
 						boolean isFactoryBean = isFactoryBean(beanName, mbd);
-						boolean matchFound = (allowEagerInit || !isFactoryBean ||
-								(mbd.getDecoratedDefinition() != null && !mbd.isLazyInit()) ||
-								containsSingleton(beanName)) &&
-								(includeNonSingletons || isSingleton(beanName)) &&
+						BeanDefinitionHolder dbd = mbd.getDecoratedDefinition();
+						boolean matchFound =
+								(allowEagerInit || !isFactoryBean ||
+										(dbd != null && !mbd.isLazyInit()) || containsSingleton(beanName)) &&
+								(includeNonSingletons ||
+										(dbd != null ? mbd.isSingleton() : isSingleton(beanName))) &&
 								isTypeMatch(beanName, type);
 						if (!matchFound && isFactoryBean) {
 							// In case of FactoryBean, try to match FactoryBean instance itself next.
@@ -981,7 +983,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		if (parent instanceof AutowireCapableBeanFactory) {
 			return ((AutowireCapableBeanFactory) parent).resolveNamedBean(requiredType);
 		}
-		return null;
+		throw new NoSuchBeanDefinitionException(requiredType);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1171,7 +1173,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			}
 			return result;
 		}
-		else if (Map.class.isAssignableFrom(type) && type.isInterface()) {
+		else if (Map.class == type) {
 			Class<?> keyType = descriptor.getMapKeyType();
 			if (String.class != keyType) {
 				return null;

@@ -57,17 +57,23 @@ public class RequestContext {
 
 	private final MessageSource messageSource;
 
-	private Boolean defaultHtmlEscape;
-
-	private Map<String, Errors> errorsMap;
-
 	private Locale locale;
 
 	private TimeZone timeZone;
 
+	private Boolean defaultHtmlEscape;
 
-	public RequestContext(ServerWebExchange exchange, Map<String, Object> model,
-			MessageSource messageSource) {
+	private Map<String, Errors> errorsMap;
+
+	private RequestDataValueProcessor dataValueProcessor;
+
+
+	public RequestContext(ServerWebExchange exchange, Map<String, Object> model, MessageSource messageSource) {
+		this(exchange, model, messageSource, null);
+	}
+
+	public RequestContext(ServerWebExchange exchange, Map<String, Object> model, MessageSource messageSource,
+			RequestDataValueProcessor dataValueProcessor) {
 
 		Assert.notNull(exchange, "'exchange' is required");
 		Assert.notNull(model, "'model' is required");
@@ -75,9 +81,13 @@ public class RequestContext {
 		this.exchange = exchange;
 		this.model = model;
 		this.messageSource = messageSource;
-		this.defaultHtmlEscape = null; // TODO
-		this.locale = Locale.getDefault(); // TODO
+
+		Locale acceptLocale = exchange.getRequest().getHeaders().getAcceptLanguageAsLocale();
+		this.locale = acceptLocale != null ? acceptLocale : Locale.getDefault();
 		this.timeZone = TimeZone.getDefault(); // TODO
+
+		this.defaultHtmlEscape = null; // TODO
+		this.dataValueProcessor = dataValueProcessor;
 	}
 
 
@@ -102,7 +112,6 @@ public class RequestContext {
 
 	/**
 	 * Return the current Locale.
-	 * TODO: currently this is Locale.getDefault()
 	 */
 	public final Locale getLocale() {
 		return this.locale;
@@ -118,7 +127,6 @@ public class RequestContext {
 
 	/**
 	 * Change the current locale to the specified one.
-	 * TODO: currently simply change the internal field
 	 */
 	public void changeLocale(Locale locale) {
 		this.locale = locale;
@@ -126,7 +134,6 @@ public class RequestContext {
 
 	/**
 	 * Change the current locale to the specified locale and time zone context.
-	 * TODO: currently simply change the internal fields
 	 */
 	public void changeLocale(Locale locale, TimeZone timeZone) {
 		this.locale = locale;
@@ -160,6 +167,14 @@ public class RequestContext {
 	}
 
 	/**
+	 * Return the {@link RequestDataValueProcessor} instance to apply to in form
+	 * tag libraries and to redirect URLs.
+	 */
+	public Optional<RequestDataValueProcessor> getRequestDataValueProcessor() {
+		return Optional.ofNullable(this.dataValueProcessor);
+	}
+
+	/**
 	 * Return the context path of the the current web application. This is
 	 * useful for building links to other resources within the application.
 	 * <p>Delegates to {@link ServerHttpRequest#getContextPath()}.
@@ -176,8 +191,7 @@ public class RequestContext {
 	 */
 	public String getContextUrl(String relativeUrl) {
 		String url = getContextPath() + relativeUrl;
-		// TODO: this.response.encodeURL(url)
-		return url;
+		return getExchange().getResponse().encodeUrl(url);
 	}
 
 	/**
@@ -194,8 +208,7 @@ public class RequestContext {
 		String url = getContextPath() + relativeUrl;
 		UriTemplate template = new UriTemplate(url);
 		url = template.expand(params).toASCIIString();
-		// TODO: this.response.encodeURL(url)
-		return url;
+		return getExchange().getResponse().encodeUrl(url);
 	}
 
 	/**
